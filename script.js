@@ -18,6 +18,52 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 2000);
     });
 
+    // Check if user has already generated a free PDF
+function checkFreeUsageLimit() {
+    const usageKey = 'evidencePackGenerated';
+    const hasGenerated = localStorage.getItem(usageKey);
+    
+    if (hasGenerated === 'true') {
+        // User has already generated one
+        return false;
+    }
+    return true;
+}
+
+// Mark that user has generated a PDF
+function markPDFGenerated() {
+    localStorage.setItem('evidencePackGenerated', 'true');
+    localStorage.setItem('generatedDate', new Date().toISOString());
+}
+
+// Add this check in your form submission handler
+form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Check usage limit
+    if (!checkFreeUsageLimit()) {
+        alert(
+            '⚠️ Free Usage Limit Reached\n\n' +
+            'You\'ve already generated your free evidence pack.\n\n' +
+            'To generate more packs:\n' +
+            '• Purchase full access for $49\n' +
+            '• Or contact us for bulk pricing\n\n' +
+            'Email: support@yourwebsite.com'
+        );
+        return;
+    }
+    
+    // Show loading modal
+    loadingModal.show();
+    
+    // Simulate processing time
+    setTimeout(() => {
+        generateEvidencePack();
+        markPDFGenerated(); // Mark as generated
+        loadingModal.hide();
+    }, 2000);
+});
+
     // ==================== AI FEATURES - SUMMARIZE COMMUNICATION ====================
     const summarizeBtn = document.getElementById('summarizeBtn');
     if (summarizeBtn) {
