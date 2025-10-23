@@ -4,20 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('evidenceForm');
     const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
 
-    // Form submission handler
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        // Show loading modal
-        loadingModal.show();
-        
-        // Simulate processing time
-        setTimeout(() => {
-            generateEvidencePack();
-            loadingModal.hide();
-        }, 2000);
-    });
-
+    
     // Check if user has already generated a free PDF
 function checkFreeUsageLimit() {
     const usageKey = 'evidencePackGenerated';
