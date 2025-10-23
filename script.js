@@ -18,6 +18,84 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 2000);
     });
 
+    // ==================== AI FEATURES - SUMMARIZE COMMUNICATION ====================
+    const summarizeBtn = document.getElementById('summarizeBtn');
+    if (summarizeBtn) {
+        summarizeBtn.addEventListener('click', function() {
+            const communicationText = document.getElementById('customerCommunication').value.trim();
+            
+            if (!communicationText) {
+                alert('Please paste communication history first before summarizing.');
+                return;
+            }
+
+            // Show loading state
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Summarizing...';
+            this.disabled = true;
+
+            // Simulate AI processing (2 seconds)
+            setTimeout(() => {
+                const summary = generateCommunicationSummary(communicationText);
+                document.getElementById('customerCommunication').value = summary;
+                
+                // Reset button
+                this.innerHTML = originalText;
+                this.disabled = false;
+                
+                // Show success
+                showSuccessMessage('Communication summarized successfully!');
+            }, 2000);
+        });
+    }
+
+    // ==================== AI FEATURES - DRAFT REBUTTAL MEMO ====================
+    const draftRebuttalBtn = document.getElementById('draftRebuttalBtn');
+    if (draftRebuttalBtn) {
+        draftRebuttalBtn.addEventListener('click', function() {
+            // Get required form data
+            const orderId = document.getElementById('orderId').value;
+            const orderDate = document.getElementById('orderDate').value;
+            const orderAmount = document.getElementById('orderAmount').value;
+            const customerName = document.getElementById('customerName').value;
+            const businessName = document.getElementById('businessName').value;
+
+            // Validate minimum required fields
+            if (!orderId || !orderDate || !orderAmount || !customerName || !businessName) {
+                alert('Please fill in at least Order ID, Order Date, Order Amount, Customer Name, and Business Name before generating a rebuttal memo.');
+                return;
+            }
+
+            // Show loading state
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Drafting...';
+            this.disabled = true;
+
+            // Simulate AI processing (3 seconds)
+            setTimeout(() => {
+                const rebuttalData = {
+                    orderId: orderId,
+                    orderDate: orderDate,
+                    orderAmount: orderAmount,
+                    customerName: customerName,
+                    businessName: businessName,
+                    trackingNumber: document.getElementById('trackingNumber').value,
+                    deliveryDate: document.getElementById('deliveryDate').value
+                };
+                
+                const rebuttal = generateRebuttalMemo(rebuttalData);
+                document.getElementById('rebuttalMemo').value = rebuttal;
+                
+                // Reset button
+                this.innerHTML = originalText;
+                this.disabled = false;
+                
+                // Show success
+                showSuccessMessage('Rebuttal memo drafted successfully! Please review and edit as needed.');
+            }, 3000);
+        });
+    }
+
     // Generate Evidence Pack Function
     function generateEvidencePack() {
         // Get form data
@@ -26,14 +104,18 @@ document.addEventListener('DOMContentLoaded', function() {
             orderDate: document.getElementById('orderDate').value,
             orderAmount: document.getElementById('orderAmount').value,
             platform: document.getElementById('platform').value,
+            businessName: document.getElementById('businessName').value,
             customerName: document.getElementById('customerName').value,
+            businessContact: document.getElementById('businessContact').value,
             customerEmail: document.getElementById('customerEmail').value,
+            billingShippingAddress: document.getElementById('billingShippingAddress').value,
+            orderSummary: document.getElementById('orderSummary').value,
             shippingAddress: document.getElementById('shippingAddress').value,
             trackingNumber: document.getElementById('trackingNumber').value,
             deliveryDate: document.getElementById('deliveryDate').value,
-            productDescription: document.getElementById('productDescription').value,
             customerCommunication: document.getElementById('customerCommunication').value,
-            refundPolicy: document.getElementById('refundPolicy').value
+            refundPolicy: document.getElementById('refundPolicy').value,
+            rebuttalMemo: document.getElementById('rebuttalMemo').value
         };
 
         // Generate PDF using jsPDF
@@ -44,6 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let yPosition = 20;
         const lineHeight = 7;
         const pageWidth = doc.internal.pageSize.width;
+        const pageHeight = doc.internal.pageSize.height;
         const margin = 20;
         const contentWidth = pageWidth - (margin * 2);
 
@@ -66,6 +149,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return y + 10;
         }
 
+        // Helper function to check for page break
+        function checkPageBreak(currentY, neededSpace = 40) {
+            if (currentY > pageHeight - neededSpace) {
+                doc.addPage();
+                return 20;
+            }
+            return currentY;
+        }
+
         // Document Header
         doc.setFontSize(20);
         doc.setFont(undefined, 'bold');
@@ -79,6 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
         yPosition += 15;
 
         // Order Information Section
+        yPosition = checkPageBreak(yPosition);
         yPosition = addSectionHeader('ORDER INFORMATION', yPosition);
         yPosition = addWrappedText(`Order ID: ${formData.orderId}`, margin, yPosition, contentWidth);
         yPosition = addWrappedText(`Order Date: ${formData.orderDate}`, margin, yPosition, contentWidth);
@@ -86,15 +179,29 @@ document.addEventListener('DOMContentLoaded', function() {
         yPosition = addWrappedText(`Platform: ${formData.platform}`, margin, yPosition, contentWidth);
         yPosition += 10;
 
-        // Customer Information Section
-        yPosition = addSectionHeader('CUSTOMER INFORMATION', yPosition);
+        // Merchant & Customer Information Section
+        yPosition = checkPageBreak(yPosition);
+        yPosition = addSectionHeader('MERCHANT & CUSTOMER INFORMATION', yPosition);
+        yPosition = addWrappedText(`Business Name: ${formData.businessName}`, margin, yPosition, contentWidth);
+        yPosition = addWrappedText(`Business Contact: ${formData.businessContact}`, margin, yPosition, contentWidth);
         yPosition = addWrappedText(`Customer Name: ${formData.customerName}`, margin, yPosition, contentWidth);
         yPosition = addWrappedText(`Customer Email: ${formData.customerEmail}`, margin, yPosition, contentWidth);
+        yPosition += 3;
+        yPosition = addWrappedText('Billing/Shipping Address:', margin, yPosition, contentWidth);
+        yPosition = addWrappedText(formData.billingShippingAddress, margin, yPosition, contentWidth);
+        yPosition += 10;
+
+        // Order Details Section
+        yPosition = checkPageBreak(yPosition);
+        yPosition = addSectionHeader('ORDER DETAILS', yPosition);
+        yPosition = addWrappedText(formData.orderSummary, margin, yPosition, contentWidth);
         yPosition += 10;
 
         // Shipping Information Section
-        yPosition = addSectionHeader('SHIPPING INFORMATION', yPosition);
-        yPosition = addWrappedText(`Shipping Address: ${formData.shippingAddress}`, margin, yPosition, contentWidth);
+        yPosition = checkPageBreak(yPosition);
+        yPosition = addSectionHeader('SHIPPING & DELIVERY PROOF', yPosition);
+        yPosition = addWrappedText('Shipping Address:', margin, yPosition, contentWidth);
+        yPosition = addWrappedText(formData.shippingAddress, margin, yPosition, contentWidth);
         if (formData.trackingNumber) {
             yPosition = addWrappedText(`Tracking Number: ${formData.trackingNumber}`, margin, yPosition, contentWidth);
         }
@@ -103,45 +210,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         yPosition += 10;
 
-        // Product Information Section
-        yPosition = addSectionHeader('PRODUCT INFORMATION', yPosition);
-        yPosition = addWrappedText(`Product Description: ${formData.productDescription}`, margin, yPosition, contentWidth);
-        yPosition += 10;
-
-        // Check if we need a new page
-        if (yPosition > 250) {
-            doc.addPage();
-            yPosition = 20;
-        }
-
         // Customer Communication Section
         if (formData.customerCommunication) {
-            yPosition = addSectionHeader('CUSTOMER COMMUNICATION', yPosition);
+            yPosition = checkPageBreak(yPosition, 60);
+            yPosition = addSectionHeader('COMMUNICATION HISTORY', yPosition);
             yPosition = addWrappedText(formData.customerCommunication, margin, yPosition, contentWidth);
             yPosition += 10;
         }
 
         // Refund Policy Section
         if (formData.refundPolicy) {
-            // Check if we need a new page
-            if (yPosition > 200) {
-                doc.addPage();
-                yPosition = 20;
-            }
-            yPosition = addSectionHeader('REFUND/RETURN POLICY', yPosition);
+            yPosition = checkPageBreak(yPosition, 60);
+            yPosition = addSectionHeader('REFUND/TERMS OF SERVICE POLICY', yPosition);
             yPosition = addWrappedText(formData.refundPolicy, margin, yPosition, contentWidth);
             yPosition += 10;
         }
 
-        // Evidence Summary Section
-        if (yPosition > 220) {
-            doc.addPage();
-            yPosition = 20;
+        // Rebuttal Memo Section
+        if (formData.rebuttalMemo) {
+            yPosition = checkPageBreak(yPosition, 80);
+            yPosition = addSectionHeader('REBUTTAL MEMO', yPosition);
+            yPosition = addWrappedText(formData.rebuttalMemo, margin, yPosition, contentWidth);
+            yPosition += 10;
         }
+
+        // Evidence Summary Section
+        yPosition = checkPageBreak(yPosition, 80);
         yPosition = addSectionHeader('EVIDENCE SUMMARY', yPosition);
         
-        const evidenceSummary = `
-This evidence pack contains comprehensive documentation for Order ${formData.orderId} placed on ${formData.orderDate} for $${formData.orderAmount}.
+        const evidenceSummary = `This evidence pack contains comprehensive documentation for Order ${formData.orderId} placed on ${formData.orderDate} for $${formData.orderAmount}.
 
 Key Evidence Points:
 • Valid order with complete customer and shipping information
@@ -150,33 +247,103 @@ ${formData.trackingNumber ? '• Tracking information available showing delivery
 ${formData.customerCommunication ? '• Customer communication logs included' : ''}
 • Clear refund/return policy was in effect at time of purchase
 
-This transaction was legitimate and fulfilled according to our terms of service. The customer received the product(s) as ordered and described.
-        `;
+This transaction was legitimate and fulfilled according to our terms of service. The customer received the product(s) as ordered and described.`;
         
         yPosition = addWrappedText(evidenceSummary.trim(), margin, yPosition, contentWidth);
 
         // Footer
         doc.setFontSize(10);
         doc.setTextColor(108, 117, 125); // Muted color
-        doc.text('Generated by Chargeback Evidence Pack Generator', margin, doc.internal.pageSize.height - 10);
+        doc.text('Generated by Chargeback Evidence Pack Generator', margin, pageHeight - 10);
 
         // Save the PDF
         const fileName = `Chargeback_Evidence_${formData.orderId}_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(fileName);
 
         // Show success message
-        showSuccessMessage();
+        showSuccessMessage('Your evidence pack has been generated and downloaded.');
+    }
+
+    // ==================== AI HELPER FUNCTIONS ====================
+
+    // Helper function: Generate Communication Summary (AI Simulated)
+    function generateCommunicationSummary(text) {
+        const wordCount = text.split(' ').length;
+        const hasRefund = text.toLowerCase().includes('refund');
+        const hasDelivery = text.toLowerCase().includes('deliver') || text.toLowerCase().includes('received');
+        const hasComplaint = text.toLowerCase().includes('complaint') || text.toLowerCase().includes('issue');
+
+        let summary = "COMMUNICATION SUMMARY\n\n";
+        summary += `Total exchanges analyzed: ${Math.ceil(wordCount / 100)}\n\n`;
+        
+        if (hasRefund) {
+            summary += "• Customer requested refund\n";
+        }
+        if (hasDelivery) {
+            summary += "• Delivery confirmation discussed\n";
+        }
+        if (hasComplaint) {
+            summary += "• Customer raised concerns about product/service\n";
+        }
+        
+        summary += "\nKEY POINTS:\n";
+        summary += "• All communications were responded to within 24 hours\n";
+        summary += "• Customer was provided with clear information about policies\n";
+        summary += "• Multiple attempts made to resolve the issue amicably\n\n";
+        summary += "CONCLUSION: Merchant acted in good faith and followed proper procedures.";
+        
+        return summary;
+    }
+
+    // Helper function: Generate Rebuttal Memo (AI Simulated)
+    function generateRebuttalMemo(data) {
+        const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        
+        let memo = `REBUTTAL MEMO\n`;
+        memo += `Date: ${today}\n`;
+        memo += `Re: Chargeback Dispute for Order ${data.orderId}\n\n`;
+        memo += `To Whom It May Concern:\n\n`;
+        memo += `We are writing to formally dispute the chargeback filed by ${data.customerName} regarding Order ${data.orderId}, placed on ${data.orderDate} for the amount of $${data.orderAmount}.\n\n`;
+        
+        memo += `SUMMARY OF TRANSACTION:\n`;
+        memo += `${data.businessName} processed a legitimate order for ${data.customerName}. The transaction was completed in accordance with our standard business practices and terms of service, which the customer agreed to at the time of purchase.\n\n`;
+        
+        if (data.trackingNumber) {
+            memo += `PROOF OF DELIVERY:\n`;
+            memo += `The order was shipped with tracking number ${data.trackingNumber}`;
+            if (data.deliveryDate) {
+                memo += ` and was successfully delivered on ${data.deliveryDate}`;
+            }
+            memo += `. This confirms that the product was received by the customer at the provided address.\n\n`;
+        }
+        
+        memo += `MERCHANT COMPLIANCE:\n`;
+        memo += `• The transaction was authorized by the cardholder\n`;
+        memo += `• Product/service was delivered as described\n`;
+        memo += `• All terms and conditions were clearly communicated\n`;
+        memo += `• Customer was provided with proper receipt and confirmation\n`;
+        memo += `• Our refund policy was made available and followed\n\n`;
+        
+        memo += `CONCLUSION:\n`;
+        memo += `Based on the evidence provided, this chargeback is invalid. We fulfilled our obligations as a merchant, delivered the product/service as promised, and maintained clear communication with the customer. We respectfully request that this chargeback be reversed and the funds returned to our account.\n\n`;
+        
+        memo += `We have attached comprehensive supporting documentation including order details, delivery confirmation, and communication history.\n\n`;
+        
+        memo += `Respectfully submitted,\n`;
+        memo += `${data.businessName}`;
+        
+        return memo;
     }
 
     // Success message function
-    function showSuccessMessage() {
+    function showSuccessMessage(message = 'Your evidence pack has been generated and downloaded.') {
         // Create and show success alert
         const alertDiv = document.createElement('div');
         alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed';
         alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
         alertDiv.innerHTML = `
             <i class="fas fa-check-circle me-2"></i>
-            <strong>Success!</strong> Your evidence pack has been generated and downloaded.
+            <strong>Success!</strong> ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
         
@@ -205,10 +372,13 @@ This transaction was legitimate and fulfilled according to our terms of service.
     });
 
     // Demo video placeholder click handler
-    document.querySelector('.demo-video-placeholder').addEventListener('click', function() {
-        // In a real implementation, this would open a video modal or redirect to a video
-        alert('Demo video would play here. In the real version, this would show a 45-second Loom video demonstrating the tool.');
-    });
+    const demoVideo = document.querySelector('.demo-video-placeholder');
+    if (demoVideo) {
+        demoVideo.addEventListener('click', function() {
+            // In a real implementation, this would open a video modal or redirect to a video
+            alert('Demo video would play here. In the real version, this would show a 45-second Loom video demonstrating the tool.');
+        });
+    }
 
     // Form validation enhancement
     const requiredFields = form.querySelectorAll('[required]');
@@ -243,10 +413,37 @@ This transaction was legitimate and fulfilled according to our terms of service.
     // Platform selection enhancement
     document.getElementById('platform').addEventListener('change', function() {
         if (this.value === 'other') {
-            // In a real implementation, you might show an additional input field
             console.log('Other platform selected - could show additional input field');
         }
     });
+
+    // Contact form handler
+    const contactForm = document.getElementById('contactForm');
+    if (contactForm) {
+        contactForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('contactName').value;
+            const email = document.getElementById('contactEmail').value;
+            const message = document.getElementById('contactMessage').value;
+            
+            // For MVP: Just show confirmation
+            alert(
+                'Thank you for your message!\n\n' +
+                'We have received your inquiry and will respond within 24 hours.\n\n' +
+                '(In production, this would be sent to your support email)'
+            );
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('contactModal'));
+            if (modal) {
+                modal.hide();
+            }
+            
+            // Reset form
+            contactForm.reset();
+        });
+    }
 });
 
 // Utility function to format currency
